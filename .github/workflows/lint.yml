@@ -10,13 +10,12 @@ on:
       - develop
       - main
 
+permissions:
+  contents: write
+
 jobs:
   quality:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -39,10 +38,4 @@ jobs:
         run: composer lint
 
       - name: Run ESLint
-        run: npm run lint:fix
-
-      - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v7.1.0
-        with:
-          commit_message: fix code style
-          commit_options: '--no-verify'
+        run: npm run lint
