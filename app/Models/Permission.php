@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PermissionAction;
+use Database\Factories\PermissionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,9 @@ class Permission extends Model
         ];
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function subject(): MorphTo
     {
         return $this->morphTo();

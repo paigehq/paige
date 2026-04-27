@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PageStatus;
+use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -47,26 +48,6 @@ class Page extends Model
     public function getParentKeyName(): string
     {
         return 'parent_id';
-    }
-
-    public function getClosureTable(): string
-    {
-        return 'page_ancestors';
-    }
-
-    public function getClosureTableAncestorKeyName(): string
-    {
-        return 'ancestor_id';
-    }
-
-    public function getClosureTableDescendantKeyName(): string
-    {
-        return 'page_id';
-    }
-
-    public function getClosureTableDepthKeyName(): string
-    {
-        return 'depth';
     }
 
     /**
