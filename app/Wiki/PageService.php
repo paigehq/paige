@@ -9,6 +9,7 @@ use App\Wiki\Actions\CreatePage;
 use App\Wiki\Actions\DeletePage;
 use App\Wiki\Actions\MovePage;
 use App\Wiki\Actions\PublishPage;
+use App\Wiki\Actions\SaveDraft;
 
 class PageService
 {
@@ -17,6 +18,7 @@ class PageService
         protected readonly PublishPage $publishPage,
         protected readonly MovePage $movePage,
         protected readonly DeletePage $deletePage,
+        protected readonly SaveDraft $saveDraft,
     ) {
         //
     }
@@ -50,5 +52,10 @@ class PageService
     public function deletePage(Page $page): void
     {
         $this->deletePage->handle($page);
+    }
+
+    public function saveDraft(Page $page, User $editor, ?string $title, ?string $content): Page
+    {
+        return $this->saveDraft->handle($page, $editor, $title, $content);
     }
 }
