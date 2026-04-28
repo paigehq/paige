@@ -18,6 +18,8 @@ class PageSlugHistory extends Model
     /** @use HasFactory<PageSlugHistoryFactory> */
     use HasFactory;
 
+    protected $table = 'page_slug_history';
+
     public $timestamps = false;
 
     /**

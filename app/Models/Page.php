@@ -26,6 +26,7 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
  * @property int $last_editor_id
  * @property int $revision_number
  * @property int $position
+ * @property Space $space
  */
 #[Fillable([
     'space_id',

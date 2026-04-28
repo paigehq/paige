@@ -13,9 +13,12 @@ describe('PublishPage', function () {
         $user = User::factory()->create();
         $page = app(CreatePage::class)->handle($space, $user, 'Getting Started');
 
-        $newContent = json_encode(['type' => 'doc', 'content' => [
-            ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Updated']]],
-        ]]);
+        $newContent = json_encode([
+            'type' => 'doc',
+            'content' => [
+                ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Updated']]],
+            ],
+        ]);
 
         $published = app(PublishPage::class)->handle($page, $user, null, $newContent, 'First publish');
 
@@ -82,5 +85,44 @@ describe('PublishPage', function () {
 
         expect($final->revision_number)->toBe(3);
         $this->assertDatabaseCount('page_revisions', 3);
+    });
+
+    it('saves the old slug to page_slug_history when the title changes enough to alter the slug', function () {
+        $space = Space::factory()->create();
+        $user = User::factory()->create();
+        $page = app(CreatePage::class)->handle($space, $user, 'Getting Started');
+
+        expect($page->slug)->toBe('getting-started');
+
+        app(PublishPage::class)->handle($page, $user, 'Installation Guide');
+
+        $this->assertDatabaseHas('page_slug_history', [
+            'page_id' => $page->id,
+            'slug' => 'getting-started',
+        ]);
+
+        expect($page->fresh()->slug)->toBe('installation-guide');
+    });
+
+    it('does not write to page_slug_history when the title change produces the same slug', function () {
+        $space = Space::factory()->create();
+        $user = User::factory()->create();
+        $page = app(CreatePage::class)->handle($space, $user, 'Getting Started');
+
+        // Title changes but slug would be identical (same words, different case/punctuation)
+        app(PublishPage::class)->handle($page, $user, 'Getting  Started');
+
+        $this->assertDatabaseCount('page_slug_history', 0);
+        expect($page->fresh()->slug)->toBe('getting-started');
+    });
+
+    it('does not write to page_slug_history when no title is provided', function () {
+        $space = Space::factory()->create();
+        $user = User::factory()->create();
+        $page = app(CreatePage::class)->handle($space, $user, 'My Page');
+
+        app(PublishPage::class)->handle($page, $user, null, json_encode(['type' => 'doc', 'content' => []]));
+
+        $this->assertDatabaseCount('page_slug_history', 0);
     });
 });
