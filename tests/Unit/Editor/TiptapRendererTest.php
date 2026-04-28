@@ -2,10 +2,11 @@
 
 use App\Editor\TiptapRenderer;
 use App\Models\Page;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
-uses(TestCase::class);
+uses(TestCase::class)->use(RefreshDatabase::class);
 
 // JSON fixture helpers — prefixed "r_" to avoid collisions when both test files run together
 function r_doc(array ...$nodes): string
@@ -222,5 +223,24 @@ describe('TiptapRenderer::renderCached()', function () {
         $page->content = null;
 
         expect((new TiptapRenderer)->renderCached($page))->toBe('');
+    });
+
+    it('falls back to a fresh render when the cache store throws', function () {
+        Cache::shouldReceive('remember')
+            ->once()
+            ->andThrow(new RuntimeException('Redis connection refused'));
+
+        $page = Page::factory()->create([
+            'content' => json_encode([
+                'type' => 'doc',
+                'content' => [
+                    ['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => 'Fallback text']]],
+                ],
+            ]),
+        ]);
+
+        $html = (new TiptapRenderer)->renderCached($page);
+
+        expect($html)->toContain('Fallback text');
     });
 });

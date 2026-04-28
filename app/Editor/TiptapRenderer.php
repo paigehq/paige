@@ -36,10 +36,14 @@ class TiptapRenderer
      */
     public function renderCached(Page $page): string
     {
-        return Cache::remember(
-            "page:$page->id:html",
-            now()->addHours(24),
-            fn () => $this->render($page->content)
-        );
+        try {
+            return Cache::remember(
+                "page:$page->id:html",
+                now()->addHours(24),
+                fn () => $this->render($page->content)
+            );
+        } catch (Throwable) {
+            return $this->render($page->content);
+        }
     }
 }
