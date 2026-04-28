@@ -10,7 +10,7 @@ use App\Wiki\Exceptions\SlugExhaustedException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-readonly class CreatePage
+class CreatePage
 {
     public function __construct(protected CreateRevision $createRevision)
     {

@@ -13,6 +13,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
+/**
+ * @property int $id
+ * @property int $space_id
+ * @property int|null $parent_id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $content
+ * @property string $content_type
+ * @property PageStatus $status
+ * @property int $author_id
+ * @property int $last_editor_id
+ * @property int $revision_number
+ * @property int $position
+ */
 #[Fillable([
     'space_id',
     'parent_id',
