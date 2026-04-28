@@ -13,8 +13,8 @@ use Inertia\Response;
 class SpaceController extends Controller
 {
     public function __construct(
-        private readonly TiptapRenderer $renderer,
-        private readonly PageTreeBuilder $treeBuilder,
+        protected readonly TiptapRenderer $renderer,
+        protected readonly PageTreeBuilder $treeBuilder,
     ) {}
 
     public function show(Space $space): Response

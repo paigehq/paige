@@ -5,14 +5,8 @@ use App\Models\Space;
 use App\Models\User;
 use App\Wiki\Actions\CreatePage;
 use App\Wiki\Actions\PublishPage;
-use Illuminate\Support\Facades\Route;
 
 describe('SlugRedirectMiddleware', function () {
-    beforeEach(function (): void {
-        // Stub route — replaced by a real controller in Session 5.
-        Route::middleware('web')->get('/s/{spaceSlug}/{pageSlug}', fn () => response('ok'));
-    });
-
     it('issues a 301 redirect to the current slug when a historical slug is requested', function () {
         $space = Space::factory()->create(['slug' => 'my-space']);
         $user = User::factory()->create();
@@ -29,7 +23,8 @@ describe('SlugRedirectMiddleware', function () {
     it('passes through when the slug is not in page_slug_history', function () {
         $space = Space::factory()->create(['slug' => 'my-space']);
         $user = User::factory()->create();
-        app(CreatePage::class)->handle($space, $user, 'Installation Guide');
+        $page = app(CreatePage::class)->handle($space, $user, 'Installation Guide');
+        app(PublishPage::class)->handle($page, $user);
 
         $this->get('/s/my-space/installation-guide')
             ->assertStatus(200);
@@ -52,7 +47,8 @@ describe('SlugRedirectMiddleware', function () {
         $page->delete();
         PageSlugHistory::create(['page_id' => $page->id, 'slug' => 'old-slug', 'created_at' => now()]);
 
+        // Middleware passes through (no redirect); page is gone so the real controller 404s
         $this->get('/s/my-space/old-slug')
-            ->assertStatus(200); // passes through; no valid live page to redirect to
+            ->assertStatus(404);
     });
 });
