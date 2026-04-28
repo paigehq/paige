@@ -6,6 +6,8 @@ use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
 use App\Wiki\Actions\CreatePage;
+use App\Wiki\Actions\DeletePage;
+use App\Wiki\Actions\MovePage;
 use App\Wiki\Actions\PublishPage;
 
 class PageService
@@ -13,6 +15,8 @@ class PageService
     public function __construct(
         protected readonly CreatePage $createPage,
         protected readonly PublishPage $publishPage,
+        protected readonly MovePage $movePage,
+        protected readonly DeletePage $deletePage,
     ) {
         //
     }
@@ -36,5 +40,15 @@ class PageService
         ?string $changeSummary = null,
     ): Page {
         return $this->publishPage->handle($page, $editor, $title, $content, $changeSummary);
+    }
+
+    public function movePage(Page $page, ?Page $newParent): Page
+    {
+        return $this->movePage->handle($page, $newParent);
+    }
+
+    public function deletePage(Page $page): void
+    {
+        $this->deletePage->handle($page);
     }
 }
