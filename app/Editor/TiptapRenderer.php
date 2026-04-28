@@ -2,6 +2,8 @@
 
 namespace App\Editor;
 
+use App\Models\Page;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 use Tiptap\Editor;
 use Tiptap\Extensions\StarterKit;
@@ -27,5 +29,17 @@ class TiptapRenderer
         } catch (Throwable) {
             return '';
         }
+    }
+
+    /**
+     * Cache key: page:{page_id}:html - 24h TTL, invalidated by PublishPage action.
+     */
+    public function renderCached(Page $page): string
+    {
+        return Cache::remember(
+            "page:$page->id:html",
+            now()->addHours(24),
+            fn () => $this->render($page->content)
+        );
     }
 }

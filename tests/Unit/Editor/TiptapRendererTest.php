@@ -1,6 +1,11 @@
 <?php
 
 use App\Editor\TiptapRenderer;
+use App\Models\Page;
+use Illuminate\Support\Facades\Cache;
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 // JSON fixture helpers — prefixed "r_" to avoid collisions when both test files run together
 function r_doc(array ...$nodes): string
@@ -164,5 +169,58 @@ describe('TiptapRenderer::render()', function () {
         $outer = r_blockquote($inner);
         $html = (new TiptapRenderer)->render(r_doc($outer));
         expect(substr_count($html, '<blockquote>'))->toBe(2);
+    });
+});
+
+describe('TiptapRenderer::renderCached()', function () {
+    beforeEach(fn () => Cache::flush());
+
+    it('returns rendered HTML for a page', function () {
+        $page = new Page;
+        $page->id = 1;
+        $page->content = r_doc(r_paragraph(r_text('Cached content')));
+
+        expect((new TiptapRenderer)->renderCached($page))->toContain('Cached content');
+    });
+
+    it('stores the result under the page:{id}:html key', function () {
+        $page = new Page;
+        $page->id = 42;
+        $page->content = r_doc(r_paragraph(r_text('Keyed')));
+
+        (new TiptapRenderer)->renderCached($page);
+
+        expect(Cache::has('page:42:html'))->toBeTrue();
+    });
+
+    it('calls render() only once when called twice for the same page', function () {
+        $renderer = new class extends TiptapRenderer
+        {
+            public int $renderCallCount = 0;
+
+            public function render(?string $json): string
+            {
+                $this->renderCallCount++;
+
+                return parent::render($json);
+            }
+        };
+
+        $page = new Page;
+        $page->id = 7;
+        $page->content = r_doc(r_paragraph(r_text('Once')));
+
+        $renderer->renderCached($page);
+        $renderer->renderCached($page);
+
+        expect($renderer->renderCallCount)->toBe(1);
+    });
+
+    it('returns empty string for a page with null content', function () {
+        $page = new Page;
+        $page->id = 2;
+        $page->content = null;
+
+        expect((new TiptapRenderer)->renderCached($page))->toBe('');
     });
 });
