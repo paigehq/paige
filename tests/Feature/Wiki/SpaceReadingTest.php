@@ -11,7 +11,7 @@ describe('SpaceController::show', function () {
     });
 
     it('returns 200 with null page when space has no published pages', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
 
         $this->get(route('spaces.show', $space))
             ->assertOk()
@@ -25,7 +25,7 @@ describe('SpaceController::show', function () {
     });
 
     it('returns first published root page as page data', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $user = User::factory()->create();
         $page = Page::factory()
             ->for($space)
@@ -52,7 +52,7 @@ describe('SpaceController::show', function () {
     });
 
     it('ignores draft pages and returns null page when only drafts exist', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         Page::factory()->for($space)->draft()->create(['parent_id' => null]);
 
         $this->get(route('spaces.show', $space))

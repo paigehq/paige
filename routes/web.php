@@ -10,7 +10,7 @@ Route::inertia('/', 'Welcome')->name('home');
 
 Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
 
-Route::prefix('s')->group(function () {
+Route::prefix('s')->middleware('space.visibility')->group(function () {
     Route::get('{space:slug}', [SpaceController::class, 'show'])->name('spaces.show');
 
     Route::middleware('auth')->group(function () {

@@ -35,7 +35,7 @@ describe('PageController (editor)', function () {
 
     it('renders pages/Create for authenticated user', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $this->actingAs($user)
             ->get(route('pages.create', $space))
             ->assertInertia(fn ($a) => $a->component('pages/Create'));
@@ -43,7 +43,7 @@ describe('PageController (editor)', function () {
 
     it('creates a page and revision via POST', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
 
         $this->actingAs($user)
             ->post(route('pages.store', $space), ['title' => 'New Page', 'content' => null])
@@ -63,7 +63,7 @@ describe('PageController (editor)', function () {
 
     it('renders pages/Edit for authenticated user', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()
             ->for($space)->for($user, 'author')->for($user, 'lastEditor')
             ->create();
@@ -75,7 +75,7 @@ describe('PageController (editor)', function () {
 
     it('saves draft via PUT with action=draft', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()
             ->for($space)->for($user, 'author')->for($user, 'lastEditor')
             ->create(['status' => PageStatus::Draft]);
@@ -92,7 +92,7 @@ describe('PageController (editor)', function () {
 
     it('publishes via PUT with action=publish', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()
             ->for($space)->for($user, 'author')->for($user, 'lastEditor')
             ->create();
@@ -122,7 +122,7 @@ describe('PageController (editor)', function () {
 
     it('soft-deletes page via DELETE', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()
             ->for($space)->for($user, 'author')->for($user, 'lastEditor')
             ->create();
