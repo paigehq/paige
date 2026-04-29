@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Page;
 use App\Models\PageRevision;
 use App\Models\Space;
 use App\Models\User;
@@ -60,5 +61,77 @@ describe('RevisionService', function () {
         expect($diff)->toBeArray()
             ->and($tags)->toContain('delete')
             ->and($tags)->toContain('insert');
+    });
+});
+
+describe('PageHistoryController', function () {
+    it('redirects unauthenticated user from history', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $page = Page::factory()
+            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
+            ->create();
+
+        $this->get(route('pages.history', [$space, $page]))->assertRedirect(route('login'));
+    });
+
+    it('renders pages/History with revisions list', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $page = Page::factory()
+            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
+            ->create();
+
+        $this->actingAs($user)
+            ->get(route('pages.history', [$space, $page]))
+            ->assertInertia(fn ($a) => $a->component('pages/History')
+                ->has('revisions', 1)
+                ->where('revisions.0.number', 1)
+            );
+    });
+
+    it('renders pages/RevisionDetail for a single revision', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $page = Page::factory()
+            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
+            ->create();
+
+        $this->actingAs($user)
+            ->get(route('pages.history.show', [$space, $page, 1]))
+            ->assertInertia(fn ($a) => $a->component('pages/RevisionDetail')
+                ->where('revision.number', 1)
+            );
+    });
+
+    it('returns 404 for unknown revision number', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $page = Page::factory()
+            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
+            ->create();
+
+        $this->actingAs($user)
+            ->get(route('pages.history.show', [$space, $page, 99]))
+            ->assertNotFound();
+    });
+
+    it('renders pages/Diff with diff data', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $c1 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello world"}]}]}';
+        $c2 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello Paige"}]}]}';
+        $page = Page::factory()
+            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
+            ->create(['content' => $c1]);
+        app(PublishPage::class)->handle($page->fresh(), $user, null, $c2);
+
+        $this->actingAs($user)
+            ->get(route('pages.history.diff', [$space, $page, 1, 2]))
+            ->assertInertia(fn ($a) => $a->component('pages/Diff')
+                ->has('diff')
+                ->has('revisionA')
+                ->has('revisionB')
+            );
     });
 });
