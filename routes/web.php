@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
 use App\Http\Controllers\SpaceController;
@@ -7,11 +8,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
+Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
+
 Route::prefix('s')->group(function () {
     Route::get('{space:slug}', [SpaceController::class, 'show'])->name('spaces.show');
 
-    // Literal-segment routes must be registered before the {page:slug} wildcard
-    // to prevent /new from being matched as a page slug.
     Route::middleware('auth')->group(function () {
         Route::get('{space:slug}/new', [PageController::class, 'create'])->name('pages.create');
         Route::post('{space:slug}/pages', [PageController::class, 'store'])->name('pages.store');
@@ -26,7 +27,25 @@ Route::prefix('s')->group(function () {
         Route::put('{space:slug}/{page:slug}', [PageController::class, 'update'])->name('pages.update');
         Route::delete('{space:slug}/{page:slug}', [PageController::class, 'destroy'])->name('pages.destroy');
         Route::get('{space:slug}/{page:slug}/history', [PageHistoryController::class, 'index'])->name('pages.history');
-        Route::get('{space:slug}/{page:slug}/history/{revision}', [PageHistoryController::class, 'show'])->name('pages.history.show');
-        Route::get('{space:slug}/{page:slug}/history/{a}/diff/{b}', [PageHistoryController::class, 'diff'])->name('pages.history.diff');
+        Route::get('{space:slug}/{page:slug}/history/{revision}',
+            [PageHistoryController::class, 'show'])->name('pages.history.show');
+        Route::get('{space:slug}/{page:slug}/history/{a}/diff/{b}',
+            [PageHistoryController::class, 'diff'])->name('pages.history.diff');
     });
 });
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'role:admin'])
+    ->group(function () {
+        Route::resource('spaces', Admin\SpaceController::class)
+            ->except(['show'])
+            ->names([
+                'index' => 'spaces.index',
+                'create' => 'spaces.create',
+                'store' => 'spaces.store',
+                'edit' => 'spaces.edit',
+                'update' => 'spaces.update',
+                'destroy' => 'spaces.destroy',
+            ]);
+    });
