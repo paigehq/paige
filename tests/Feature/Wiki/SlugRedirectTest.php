@@ -33,9 +33,9 @@ describe('SlugRedirectMiddleware', function () {
     it('passes through for paths deeper than /s/{space}/{page}', function () {
         Space::factory()->create(['slug' => 'my-space']);
 
-        // No redirect for /s/{space}/{page}/edit even if slug matches history
-        $this->get('/s/my-space/some-slug/edit')
-            ->assertStatus(404); // No route registered for this deeper path
+        // Middleware should not redirect deeper paths; route has no match → 404
+        $this->get('/s/my-space/some-slug/comments')
+            ->assertStatus(404);
     });
 
     it('does not redirect when the historical slug belongs to a deleted page', function () {

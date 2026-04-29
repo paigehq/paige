@@ -10,13 +10,18 @@ Route::inertia('/', 'Welcome')->name('home');
 Route::prefix('s')->group(function () {
     Route::get('{space:slug}', [SpaceController::class, 'show'])->name('spaces.show');
 
+    // Literal-segment routes must be registered before the {page:slug} wildcard
+    // to prevent /new from being matched as a page slug.
+    Route::middleware('auth')->group(function () {
+        Route::get('{space:slug}/new', [PageController::class, 'create'])->name('pages.create');
+        Route::post('{space:slug}/pages', [PageController::class, 'store'])->name('pages.store');
+    });
+
     Route::scopeBindings()->group(function () {
         Route::get('{space:slug}/{page:slug}', [PageController::class, 'show'])->name('pages.show');
     });
 
     Route::middleware('auth')->scopeBindings()->group(function () {
-        Route::get('{space:slug}/new', [PageController::class, 'create'])->name('pages.create');
-        Route::post('{space:slug}/pages', [PageController::class, 'store'])->name('pages.store');
         Route::get('{space:slug}/{page:slug}/edit', [PageController::class, 'edit'])->name('pages.edit');
         Route::put('{space:slug}/{page:slug}', [PageController::class, 'update'])->name('pages.update');
         Route::delete('{space:slug}/{page:slug}', [PageController::class, 'destroy'])->name('pages.destroy');
