@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $owner_id
  * @property array<string, mixed>|null $settings
  * @property Carbon|null $deleted_at
+ * @property Carbon $created_at
  * @property User $owner
  */
 #[Fillable([
