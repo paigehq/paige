@@ -11,9 +11,13 @@
   "require": {
     "php": "^8.3",
     "inertiajs/inertia-laravel": "^3.0",
+    "jfcherng/php-diff": "^7.0",
+    "laravel/fortify": "^1.36",
     "laravel/framework": "^13.0",
     "laravel/tinker": "^3.0",
-    "laravel/wayfinder": "^0.1.14"
+    "laravel/wayfinder": "^0.1.14",
+    "staudenmeir/laravel-adjacency-list": "^1.26",
+    "ueberdosis/tiptap-php": "^2.1"
   },
   "require-dev": {
     "fakerphp/faker": "^1.24",
@@ -62,6 +66,7 @@
     "ci:check": [
       "Composer\\Config::disableProcessTimeout",
       "npm run lint",
+      "npm run types:check",
       "@analyse",
       "@test"
     ],
