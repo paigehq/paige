@@ -118,3 +118,15 @@ export interface DiffViewProps {
   revisionB: DiffRevisionMeta
   diff: DiffLine[]
 }
+
+export interface SpaceListItem {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  visibility: 'public' | 'private' | 'secret'
+}
+
+export interface SpaceIndexProps {
+  spaces: SpaceListItem[]
+}
