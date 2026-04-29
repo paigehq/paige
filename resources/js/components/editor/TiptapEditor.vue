@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import { useDebounceFn, useEventListener } from '@vueuse/core'
 import { Plugin } from 'prosemirror-state'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps<{
   initialTitle: string
@@ -89,24 +89,36 @@ function save(action: 'draft' | 'publish') {
   })
 }
 
-const autosaveInterval = setInterval(() => {
-  if (isDirty.value)
-    save('draft')
-}, 30_000)
+let autosaveInterval: ReturnType<typeof setInterval> | undefined
 
-useEventListener(document, 'keydown', (e: KeyboardEvent) => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault()
-    save(e.shiftKey ? 'draft' : 'publish')
-  }
+onMounted(() => {
+  autosaveInterval = setInterval(() => {
+    if (isDirty.value)
+      save('draft')
+  }, 30_000)
 })
 
-useEventListener(window, 'beforeunload', (e: BeforeUnloadEvent) => {
-  if (isDirty.value) {
-    e.preventDefault()
-    e.returnValue = ''
-  }
-})
+useEventListener(
+  typeof document !== 'undefined' ? document : null,
+  'keydown',
+  (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+      save(e.shiftKey ? 'draft' : 'publish')
+    }
+  },
+)
+
+useEventListener(
+  typeof window !== 'undefined' ? window : null,
+  'beforeunload',
+  (e: BeforeUnloadEvent) => {
+    if (isDirty.value) {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+  },
+)
 
 onBeforeUnmount(() => {
   clearInterval(autosaveInterval)
