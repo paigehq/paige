@@ -78,9 +78,7 @@ describe('PageHistoryController', function () {
     it('renders pages/History with revisions list', function () {
         $user = User::factory()->create();
         $space = Space::factory()->create();
-        $page = Page::factory()
-            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
-            ->create();
+        $page = app(CreatePage::class)->handle($space, $user, 'First', '{"type":"doc","content":[]}');
 
         $this->actingAs($user)
             ->get(route('pages.history', [$space, $page]))
@@ -93,9 +91,7 @@ describe('PageHistoryController', function () {
     it('renders pages/RevisionDetail for a single revision', function () {
         $user = User::factory()->create();
         $space = Space::factory()->create();
-        $page = Page::factory()
-            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
-            ->create();
+        $page = app(CreatePage::class)->handle($space, $user, 'First', '{"type":"doc","content":[]}');
 
         $this->actingAs($user)
             ->get(route('pages.history.show', [$space, $page, 1]))
@@ -121,9 +117,7 @@ describe('PageHistoryController', function () {
         $space = Space::factory()->create();
         $c1 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello world"}]}]}';
         $c2 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello Paige"}]}]}';
-        $page = Page::factory()
-            ->for($space)->for($user, 'author')->for($user, 'lastEditor')
-            ->create(['content' => $c1]);
+        $page = app(CreatePage::class)->handle($space, $user, 'Test', $c1);
         app(PublishPage::class)->handle($page->fresh(), $user, null, $c2);
 
         $this->actingAs($user)

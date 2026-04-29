@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Editor\TiptapRenderer;
 use App\Models\Page;
+use App\Models\PageRevision;
 use App\Models\Space;
 use App\Wiki\RevisionService;
 use Inertia\Inertia;
@@ -25,7 +26,7 @@ class PageHistoryController extends Controller
         return Inertia::render('pages/History', [
             'space' => $this->spaceShape($space),
             'page' => $this->pageShape($page),
-            'revisions' => $revisions->map(fn ($r) => [
+            'revisions' => $revisions->map(fn (PageRevision $r) => [
                 'number' => $r->revision_number,
                 'editorName' => $r->editor->name ?? 'Unknown',
                 'changeSummary' => $r->change_summary,

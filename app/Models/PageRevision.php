@@ -7,7 +7,18 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $page_id
+ * @property string|null $title
+ * @property string|null $content
+ * @property int $editor_id
+ * @property int $revision_number
+ * @property string|null $change_summary
+ * @property Carbon $created_at
+ */
 #[Fillable([
     'page_id',
     'title',
