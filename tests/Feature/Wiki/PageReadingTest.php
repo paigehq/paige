@@ -147,4 +147,35 @@ describe('PageController::show', function () {
             ->assertRedirect("/s/{$space->slug}/current-slug")
             ->assertStatus(301);
     });
+
+    it('tree includes draft pages when the user is authenticated', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $published = Page::factory()
+            ->for($space)->published()
+            ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);
+        Page::factory()
+            ->for($space)->draft()
+            ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);
+
+        $this->actingAs($user)
+            ->get(route('pages.show', [$space, $published]))
+            ->assertOk()
+            ->assertInertia(fn ($assert) => $assert->has('tree', 2));
+    });
+
+    it('tree excludes draft pages for unauthenticated visitors', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create();
+        $published = Page::factory()
+            ->for($space)->published()
+            ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);
+        Page::factory()
+            ->for($space)->draft()
+            ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);
+
+        $this->get(route('pages.show', [$space, $published]))
+            ->assertOk()
+            ->assertInertia(fn ($assert) => $assert->has('tree', 1));
+    });
 });

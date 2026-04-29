@@ -23,6 +23,7 @@ export interface TreeNode {
   title: string
   slug: string
   position: number
+  isDraft: boolean
   children: TreeNode[]
 }
 
@@ -98,18 +99,21 @@ export interface PageEditProps {
 export interface PageHistoryProps {
   space: SpaceData
   page: { id: number, title: string, slug: string, status: string }
+  tree: TreeNode[]
   revisions: RevisionSummary[]
 }
 
 export interface RevisionDetailProps {
   space: SpaceData
   page: { id: number, title: string, slug: string, status: string }
+  tree: TreeNode[]
   revision: RevisionDetail
 }
 
 export interface DiffViewProps {
   space: SpaceData
   page: { id: number, title: string, slug: string, status: string }
+  tree: TreeNode[]
   revisionA: DiffRevisionMeta
   revisionB: DiffRevisionMeta
   diff: DiffLine[]

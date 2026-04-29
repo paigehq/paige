@@ -19,7 +19,7 @@ class SpaceController extends Controller
 
     public function show(Space $space): Response
     {
-        $tree = $this->treeBuilder->build($space);
+        $tree = $this->treeBuilder->build($space, auth()->check());
 
         $firstPage = $space->pages()
             ->where('status', PageStatus::Published)

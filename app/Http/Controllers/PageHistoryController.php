@@ -6,6 +6,7 @@ use App\Editor\TiptapRenderer;
 use App\Models\Page;
 use App\Models\PageRevision;
 use App\Models\Space;
+use App\Wiki\PageTreeBuilder;
 use App\Wiki\RevisionService;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,6 +16,7 @@ class PageHistoryController extends Controller
     public function __construct(
         protected readonly RevisionService $revisionService,
         protected readonly TiptapRenderer $renderer,
+        protected readonly PageTreeBuilder $treeBuilder,
     ) {
         //
     }
@@ -26,6 +28,7 @@ class PageHistoryController extends Controller
         return Inertia::render('pages/History', [
             'space' => $this->spaceShape($space),
             'page' => $this->pageShape($page),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
             'revisions' => $revisions->map(fn (PageRevision $r) => [
                 'number' => $r->revision_number,
                 'editorName' => $r->editor->name ?? 'Unknown',
@@ -42,6 +45,7 @@ class PageHistoryController extends Controller
         return Inertia::render('pages/RevisionDetail', [
             'space' => $this->spaceShape($space),
             'page' => $this->pageShape($page),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
             'revision' => [
                 'number' => $rev->revision_number,
                 'title' => $rev->title,
@@ -60,6 +64,7 @@ class PageHistoryController extends Controller
         return Inertia::render('pages/Diff', [
             'space' => $this->spaceShape($space),
             'page' => $this->pageShape($page),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
             'revisionA' => [
                 'number' => $revA->revision_number,
                 'editorName' => $revA->editor->name ?? 'Unknown',
@@ -79,7 +84,12 @@ class PageHistoryController extends Controller
      */
     protected function spaceShape(Space $space): array
     {
-        return ['id' => $space->id, 'name' => $space->name, 'slug' => $space->slug, 'description' => $space->description];
+        return [
+            'id' => $space->id,
+            'name' => $space->name,
+            'slug' => $space->slug,
+            'description' => $space->description,
+        ];
     }
 
     /**

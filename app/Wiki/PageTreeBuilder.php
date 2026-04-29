@@ -8,19 +8,24 @@ use App\Models\Space;
 class PageTreeBuilder
 {
     /**
-     * Build a nested tree of published pages for the given space.
-     * One DB query; tree assembly in 0(n) in PHP using references.
+     * Build a nested tree for the given space.
+     * One DB query; O(n) assembly in PHP using references.
      *
-     * @return list<array{id: int, title: string, slug: string, position: int, children: list<mixed>}>
+     * @return list<array{id: int, title: string, slug: string, position: int, isDraft: bool, children: list<mixed>}>
      */
-    public function build(Space $space): array
+    public function build(Space $space, bool $includeDrafts = false): array
     {
-        $pages = $space->pages()
-            ->where('status', PageStatus::Published)
+        $query = $space->pages()
             ->orderBy('position')
-            ->get(['id', 'title', 'slug', 'parent_id', 'position']);
+            ->select(['id', 'title', 'slug', 'parent_id', 'position', 'status']);
 
-        /** @var array<int, array{id: int, title: string, slug: string, position: int, children: list<mixed>}> $nodes */
+        if (! $includeDrafts) {
+            $query->where('status', PageStatus::Published);
+        }
+
+        $pages = $query->get();
+
+        /** @var array<int, array{id: int, title: string, slug: string, position: int, isDraft: bool, children: list<mixed>}> $nodes */
         $nodes = [];
 
         foreach ($pages as $p) {
@@ -29,6 +34,7 @@ class PageTreeBuilder
                 'title' => $p->title,
                 'slug' => $p->slug,
                 'position' => $p->position,
+                'isDraft' => $p->status === PageStatus::Draft,
                 'children' => [],
             ];
         }

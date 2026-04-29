@@ -70,7 +70,7 @@ class PageController extends Controller
                     : null,
                 'updatedAt' => $page->updated_at->toIso8601String(),
             ],
-            'tree' => $this->treeBuilder->build($space),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
         ]);
     }
 
@@ -83,7 +83,7 @@ class PageController extends Controller
                 'slug' => $space->slug,
                 'description' => $space->description,
             ],
-            'tree' => $this->treeBuilder->build($space),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
         ]);
     }
 
@@ -124,7 +124,7 @@ class PageController extends Controller
                 'status' => $page->status->value,
                 'revisionNumber' => $page->revision_number,
             ],
-            'tree' => $this->treeBuilder->build($space),
+            'tree' => $this->treeBuilder->build($space, auth()->check()),
         ]);
     }
 
