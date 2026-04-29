@@ -48,3 +48,69 @@ export interface PageShowProps {
   page: PageViewData
   tree: TreeNode[]
 }
+
+export interface PageEditData {
+  id: number
+  title: string
+  slug: string
+  content: string | null
+  status: 'draft' | 'published'
+  revisionNumber: number
+}
+
+export interface RevisionSummary {
+  number: number
+  editorName: string
+  changeSummary: string | null
+  createdAt: string
+}
+
+export interface RevisionDetail {
+  number: number
+  title: string
+  html: string
+  editorName: string
+  createdAt: string
+}
+
+export interface DiffLine {
+  tag: 'equal' | 'insert' | 'delete'
+  line: string
+}
+
+export interface DiffRevisionMeta {
+  number: number
+  editorName: string
+  createdAt: string
+}
+
+export interface PageCreateProps {
+  space: SpaceData
+  tree: TreeNode[]
+}
+
+export interface PageEditProps {
+  space: SpaceData
+  page: PageEditData
+  tree: TreeNode[]
+}
+
+export interface PageHistoryProps {
+  space: SpaceData
+  page: { id: number, title: string, slug: string, status: string }
+  revisions: RevisionSummary[]
+}
+
+export interface RevisionDetailProps {
+  space: SpaceData
+  page: { id: number, title: string, slug: string, status: string }
+  revision: RevisionDetail
+}
+
+export interface DiffViewProps {
+  space: SpaceData
+  page: { id: number, title: string, slug: string, status: string }
+  revisionA: DiffRevisionMeta
+  revisionB: DiffRevisionMeta
+  diff: DiffLine[]
+}
