@@ -1,54 +1,13 @@
 <script setup lang="ts">
 import type { PageShowProps } from '@/types/wiki'
+import AppLayout from '@/layouts/AppLayout.vue'
 
 const { space, page, tree } = defineProps<PageShowProps>()
 </script>
 
 <template>
-  <div class="flex min-h-screen">
-    <!-- Sidebar -->
-    <aside class="w-64 shrink-0 border-r border-gray-200 bg-white px-4 py-6">
-      <div class="mb-6">
-        <a :href="`/s/${space.slug}`" class="text-lg font-semibold text-gray-900 hover:text-violet-700">
-          {{ space.name }}
-        </a>
-      </div>
-      <nav>
-        <ul class="space-y-1">
-          <li v-for="node in tree" :key="node.id">
-            <a
-              :href="`/s/${space.slug}/${node.slug}`"
-              class="block rounded px-3 py-1.5 text-sm"
-              :class="[
-                node.id === page.id
-                  ? 'bg-violet-100 font-medium text-violet-700'
-                  : 'text-gray-700 hover:bg-violet-50 hover:text-violet-700',
-              ]"
-            >
-              {{ node.title }}
-            </a>
-            <ul v-if="node.children.length" class="ml-4 mt-1 space-y-1">
-              <li v-for="child in node.children" :key="child.id">
-                <a
-                  :href="`/s/${space.slug}/${child.slug}`"
-                  class="block rounded px-3 py-1.5 text-sm"
-                  :class="[
-                    child.id === page.id
-                      ? 'bg-violet-100 font-medium text-violet-700'
-                      : 'text-gray-700 hover:bg-violet-50 hover:text-violet-700',
-                  ]"
-                >
-                  {{ child.title }}
-                </a>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </nav>
-    </aside>
-
-    <!-- Main content -->
-    <main class="flex-1 px-10 py-8">
+  <AppLayout :space="space" :tree="tree" :current-page-id="page.id">
+    <main class="flex-1 overflow-y-auto px-10 py-8">
       <!-- Breadcrumb -->
       <nav class="mb-4 flex items-center gap-1 text-sm text-gray-500">
         <a :href="`/s/${space.slug}`" class="hover:text-violet-700">{{ space.name }}</a>
@@ -63,19 +22,30 @@ const { space, page, tree } = defineProps<PageShowProps>()
         </template>
       </nav>
 
-      <h1 class="mb-2 text-3xl font-bold text-gray-900">
-        {{ page.title }}
-      </h1>
+      <!-- Page actions -->
+      <div class="mb-6 flex items-start justify-between gap-4">
+        <h1 class="text-3xl font-bold text-gray-900">
+          {{ page.title }}
+        </h1>
+        <div class="flex shrink-0 items-center gap-2 pt-1 text-sm">
+          <a
+            :href="`/s/${space.slug}/${page.slug}/edit`"
+            class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-600 hover:border-violet-300 hover:text-violet-700"
+          >Edit</a>
+          <a
+            :href="`/s/${space.slug}/${page.slug}/history`"
+            class="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-gray-600 hover:border-violet-300 hover:text-violet-700"
+          >History</a>
+        </div>
+      </div>
 
       <p v-if="page.lastEditor" class="mb-8 text-sm text-gray-400">
         Last edited by {{ page.lastEditor.name }}
       </p>
 
-      <!-- Rendered page HTML -->
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="prose max-w-none" v-html="page.html" />
 
-      <!-- Child pages -->
       <section v-if="page.children.length" class="mt-10">
         <h2 class="mb-3 text-lg font-semibold text-gray-700">
           Pages in this section
@@ -90,5 +60,5 @@ const { space, page, tree } = defineProps<PageShowProps>()
         </ul>
       </section>
     </main>
-  </div>
+  </AppLayout>
 </template>

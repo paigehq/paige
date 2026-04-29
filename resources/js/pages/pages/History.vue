@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { PageHistoryProps } from '@/types/wiki'
+import AppLayout from '@/layouts/AppLayout.vue'
 
-const { space, page, revisions } = defineProps<PageHistoryProps>()
+const { space, page, tree, revisions } = defineProps<PageHistoryProps>()
 
 function diffUrl(a: number, b: number) {
   return `/s/${space.slug}/${page.slug}/history/${a}/diff/${b}`
@@ -9,8 +10,8 @@ function diffUrl(a: number, b: number) {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-start justify-center bg-[#F7F5FF] px-4 py-10">
-    <div class="w-full max-w-2xl">
+  <AppLayout :space="space" :tree="tree" :current-page-id="page.id">
+    <main class="flex-1 overflow-y-auto px-10 py-8">
       <nav class="mb-4 flex items-center gap-1 text-sm text-gray-500">
         <a :href="`/s/${space.slug}`" class="hover:text-violet-700">{{ space.name }}</a>
         <span class="text-gray-300">/</span>
@@ -49,6 +50,6 @@ function diffUrl(a: number, b: number) {
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </main>
+  </AppLayout>
 </template>
