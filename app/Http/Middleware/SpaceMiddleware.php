@@ -3,15 +3,19 @@
 namespace App\Http\Middleware;
 
 use App\Enums\SpaceVisibility;
-use App\Models\Permission;
 use App\Models\Space;
-use App\Models\User;
+use App\Permission\PermissionChecker;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class SpaceMiddleware
 {
+    public function __construct(protected PermissionChecker $checker)
+    {
+        //
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -38,7 +42,7 @@ class SpaceMiddleware
             return redirect()->route('login');
         }
 
-        if (! $this->isMember($request->user(), $space)) {
+        if (! $this->checker->can($request->user(), 'read', $space)) {
             abort(403);
         }
 
@@ -50,20 +54,10 @@ class SpaceMiddleware
      */
     protected function handleSecret(Request $request, Closure $next, Space $space): Response
     {
-        if (! $request->user() || ! $this->isMember($request->user(), $space)) {
+        if (! $request->user() || ! $this->checker->can($request->user(), 'read', $space)) {
             abort(404);
         }
 
         return $next($request);
-    }
-
-    protected function isMember(User $user, Space $space): bool
-    {
-        return Permission::query()
-            ->where('subject_type', User::class)
-            ->where('subject_id', $user->id)
-            ->where('space_id', $space->id)
-            ->where('granted', true)
-            ->exists();
     }
 }

@@ -4,6 +4,7 @@ use App\Enums\PermissionAction;
 use App\Models\Permission;
 use App\Models\Space;
 use App\Models\User;
+use App\Models\UserGroup;
 
 describe('SpaceMiddleware', function () {
     it('allows unauthenticated access to a public space', function () {
@@ -76,4 +77,20 @@ describe('SpaceMiddleware', function () {
         $this->actingAs($user)->get("/s/$space->slug")->assertNotFound();
         $this->get("/s/$space->slug")->assertNotFound();
     });
+});
+
+it('allows a group member to access a private space', function (): void {
+    $space = Space::factory()->create(); // default: private
+    $user = User::factory()->create();
+    $group = UserGroup::factory()->create(['space_id' => $space->id]);
+    $group->members()->attach($user);
+    Permission::create([
+        'subject_type' => UserGroup::class,
+        'subject_id' => $group->id,
+        'space_id' => $space->id,
+        'action' => PermissionAction::Read,
+        'granted' => true,
+    ]);
+
+    $this->actingAs($user)->get("/s/$space->slug")->assertOk();
 });
