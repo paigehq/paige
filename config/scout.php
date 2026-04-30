@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Page;
+
 return [
 
     /*
@@ -140,9 +142,11 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
-            // 'users' => [
-            //     'filterableAttributes'=> ['id', 'name', 'email'],
-            // ],
+            Page::class => [
+                'searchableAttributes' => ['title', 'content', 'tags', 'space_name'],
+                'filterableAttributes' => ['space_id', 'space_slug', 'status'],
+                'sortableAttributes' => ['updated_at'],
+            ],
         ],
     ],
 
