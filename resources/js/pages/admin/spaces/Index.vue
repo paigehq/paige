@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 interface SpaceRow {
   id: number
@@ -21,10 +23,14 @@ interface PaginatedSpaces {
 
 const { spaces } = defineProps<{ spaces: PaginatedSpaces }>()
 
-function archiveSpace(id: number): void {
-  router.delete(`/admin/spaces/${id}`, {
-    onBefore: () => confirm('Archive this space? Members will lose access until it is restored.'),
-  })
+const pendingArchiveId = ref<number | null>(null)
+
+function confirmArchive(): void {
+  if (pendingArchiveId.value === null) {
+    return
+  }
+  router.delete(`/admin/spaces/${pendingArchiveId.value}`)
+  pendingArchiveId.value = null
 }
 </script>
 
@@ -100,7 +106,7 @@ function archiveSpace(id: number): void {
                   <button
                     type="button"
                     class="text-red-500 hover:underline"
-                    @click="archiveSpace(space.id)"
+                    @click="pendingArchiveId = space.id"
                   >
                     Archive
                   </button>
@@ -128,5 +134,15 @@ function archiveSpace(id: number): void {
         </Link>
       </div>
     </main>
+
+    <ConfirmModal
+      v-if="pendingArchiveId !== null"
+      title="Archive this space?"
+      message="Members will lose access until it is restored. Existing pages are preserved."
+      confirm-label="Archive"
+      :dangerous="true"
+      @confirm="confirmArchive"
+      @cancel="pendingArchiveId = null"
+    />
   </div>
 </template>

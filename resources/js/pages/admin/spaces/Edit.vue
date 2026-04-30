@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Link, router, useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 
 interface SpaceEditData {
   id: number
@@ -18,14 +20,15 @@ const form = useForm({
   visibility: space.visibility,
 })
 
+const showArchiveModal = ref(false)
+
 function submit(): void {
   form.put(`/admin/spaces/${space.id}`)
 }
 
-function archiveSpace(): void {
-  if (confirm('Archive this space? Members will lose access until it is restored.')) {
-    router.delete(`/admin/spaces/${space.id}`)
-  }
+function confirmArchive(): void {
+  showArchiveModal.value = false
+  router.delete(`/admin/spaces/${space.id}`)
 }
 </script>
 
@@ -122,11 +125,21 @@ function archiveSpace(): void {
         <button
           type="button"
           class="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-          @click="archiveSpace"
+          @click="showArchiveModal = true"
         >
           Archive Space
         </button>
       </div>
     </main>
+
+    <ConfirmModal
+      v-if="showArchiveModal"
+      title="Archive this space?"
+      message="Members will lose access until it is restored. Existing pages are preserved."
+      confirm-label="Archive"
+      :dangerous="true"
+      @confirm="confirmArchive"
+      @cancel="showArchiveModal = false"
+    />
   </div>
 </template>
