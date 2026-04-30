@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Editor\TiptapExtractor;
 use App\Enums\PageStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
@@ -46,7 +49,7 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 class Page extends Model
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasRecursiveRelationships, SoftDeletes;
+    use HasFactory, HasRecursiveRelationships, Searchable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -129,5 +132,35 @@ class Page extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'page_tag');
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => app(TiptapExtractor::class)->plainText($this->content),
+            'space_name' => $this->space->name,
+            'space_slug' => $this->space->slug,
+            'space_id' => $this->space_id,
+            'tags' => $this->tags->pluck('name')->implode(', '),
+            'page_url' => route('pages.show', ['space' => $this->space->slug, 'page' => $this->slug]),
+            'status' => $this->status->value,
+            'updated_at' => $this->updated_at->toIso8601String(),
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === PageStatus::Published && $this->deleted_at === null;
+    }
+
+    /**
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    protected function makeAllSearchableUsing(Builder $query): Builder
+    {
+        return $query->with(['space', 'tags']);
     }
 }
