@@ -9,10 +9,13 @@ use App\Http\Requests\UpdatePageRequest;
 use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
+use App\Permission\Exceptions\PermissionDeniedException;
+use App\Permission\PermissionChecker;
 use App\Wiki\Actions\SaveDraft;
 use App\Wiki\PageService;
 use App\Wiki\PageTreeBuilder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,6 +26,7 @@ class PageController extends Controller
         protected readonly PageTreeBuilder $treeBuilder,
         protected readonly PageService $pageService,
         protected readonly SaveDraft $saveDraft,
+        protected readonly PermissionChecker $permissionChecker,
     ) {
         //
     }
@@ -87,8 +91,16 @@ class PageController extends Controller
         ]);
     }
 
+    /**
+     * @throws PermissionDeniedException
+     */
     public function store(StorePageRequest $request, Space $space): RedirectResponse
     {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->permissionChecker->authorize($user, 'write', $space);
+
         $parent = $request->integer('parent_id') > 0
             ? Page::find($request->integer('parent_id'))
             : null;
@@ -128,10 +140,15 @@ class PageController extends Controller
         ]);
     }
 
+    /**
+     * @throws PermissionDeniedException
+     */
     public function update(UpdatePageRequest $request, Space $space, Page $page): RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
+
+        $this->permissionChecker->authorize($user, 'write', $space);
 
         if ($request->input('action') === 'publish') {
             $this->pageService->publishPage(
@@ -153,8 +170,16 @@ class PageController extends Controller
         return back();
     }
 
-    public function destroy(Space $space, Page $page): RedirectResponse
+    /**
+     * @throws PermissionDeniedException
+     */
+    public function destroy(Request $request, Space $space, Page $page): RedirectResponse
     {
+        /** @var User $user */
+        $user = $request->user();
+
+        $this->permissionChecker->authorize($user, 'write', $space);
+
         $this->pageService->deletePage($page);
 
         return redirect()->route('spaces.show', $space);
