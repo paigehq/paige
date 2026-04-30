@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * @property Permission[] $permissions
+ */
 #[Fillable(['name', 'slug', 'space_id'])]
 class UserGroup extends Model
 {
