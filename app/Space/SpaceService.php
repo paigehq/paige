@@ -3,6 +3,7 @@
 namespace App\Space;
 
 use App\Enums\SpaceVisibility;
+use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
 use App\Wiki\Exceptions\SlugExhaustedException;
@@ -62,6 +63,8 @@ class SpaceService
 
     public function archive(Space $space): void
     {
+        Page::where('space_id', $space->id)->unsearchable();
+
         $space->delete();
     }
 

@@ -8,6 +8,7 @@ use App\Models\Permission;
 use App\Models\Space;
 use App\Models\User;
 use App\Search\SearchService;
+use App\Space\SpaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -131,5 +132,27 @@ describe('SearchService', function () {
         $results = app(SearchService::class)->search('penguins');
 
         expect($results[0]['excerpt'])->toContain('<mark>');
+    });
+});
+
+describe('SearchService — space archiving', function () {
+    it('excludes pages from an archived space', function () {
+        $user = User::factory()->create();
+        $space = Space::factory()->create(['visibility' => SpaceVisibility::Public]);
+        Page::factory()->for($space)->create([
+            'status' => PageStatus::Published,
+            'title' => 'Archived Space Condor Page',
+        ]);
+
+        // Verify page is findable before archiving
+        $before = app(SearchService::class)->search('Condor', $user);
+        expect($before)->toHaveCount(1);
+
+        // Archive the space
+        app(SpaceService::class)->archive($space);
+
+        // Page should no longer appear in search results
+        $after = app(SearchService::class)->search('Condor', $user);
+        expect($after)->toHaveCount(0);
     });
 });

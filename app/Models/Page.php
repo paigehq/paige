@@ -8,12 +8,14 @@ use Carbon\CarbonImmutable;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Laravel\Scout\Searchable;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
@@ -161,6 +163,19 @@ class Page extends Model
      */
     protected function makeAllSearchableUsing(Builder $query): Builder
     {
-        return $query->with(['space', 'tags']);
+        return $query->with(['space' => fn ($q) => $q->withTrashed(), 'tags']);
+    }
+
+    /**
+     * @param  Collection<int, static>  $models
+     * @return Collection<int, static>
+     */
+    public function makeSearchableUsing(Collection $models): Collection
+    {
+        if ($models instanceof EloquentCollection) {
+            $models->load(['space' => fn ($q) => $q->withTrashed(), 'tags']);
+        }
+
+        return $models;
     }
 }
