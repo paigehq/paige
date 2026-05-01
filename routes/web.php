@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Space\SpaceGroupController;
 use App\Http\Controllers\Space\SpaceMemberController;
 use App\Http\Controllers\SpaceController;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
+
+Route::get('/search', [SearchController::class, 'index'])->name('search');
 
 Route::prefix('s')->middleware('space.visibility')->group(function () {
     Route::get('{space:slug}', [SpaceController::class, 'show'])->name('spaces.show');
