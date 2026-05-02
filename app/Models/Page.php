@@ -19,6 +19,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Searchable;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
@@ -50,10 +54,10 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
     'revision_number',
     'position',
 ])]
-class Page extends Model
+class Page extends Model implements HasMedia
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasRecursiveRelationships, Searchable, SoftDeletes;
+    use HasFactory, HasRecursiveRelationships, InteractsWithMedia, Searchable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -123,14 +127,6 @@ class Page extends Model
     }
 
     /**
-     * @return HasMany<Attachment, $this>
-     */
-    public function attachments(): HasMany
-    {
-        return $this->hasMany(Attachment::class);
-    }
-
-    /**
      * @return BelongsToMany<Tag, $this>
      */
     public function tags(): BelongsToMany
@@ -183,5 +179,20 @@ class Page extends Model
         }
 
         return $models;
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('images')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+        $this->addMediaCollection('attachments');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumbnail')
+            ->performOnCollections('images')
+            ->fit(Fit::Contain, 300, 300);
     }
 }
