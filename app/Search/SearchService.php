@@ -48,6 +48,36 @@ class SearchService
             ->all();
     }
 
+    /**
+     * @param  int<1, 25>  $limit
+     * @return array<int, array<string, string|int>>
+     */
+    public function searchForApi(string $query, ?User $user = null, int $limit = 10): array
+    {
+        if (trim($query) === '') {
+            return [];
+        }
+
+        $pages = Page::search($query)->take($limit)->get();
+
+        $pages->load(['space' => fn (Relation $q) => $q->withoutGlobalScope(SoftDeletingScope::class)]);
+        $pages->load(['tags']);
+
+        return $pages
+            ->filter(fn (Page $page) => $this->canRead($user, $page->space))
+            ->map(fn (Page $page) => [
+                'id' => $page->id,
+                'title' => $page->title,
+                'excerpt' => $this->excerptForApi($page->content, $query),
+                'space_name' => $page->space->name,
+                'space_slug' => $page->space->slug,
+                'page_url' => "/s/{$page->space->slug}/$page->slug",
+                'updated_at' => $page->updated_at->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+    }
+
     protected function canRead(?User $user, Space $space): bool
     {
         if ($space->deleted_at !== null) {
@@ -84,5 +114,24 @@ class SearchService
         );
 
         return ($start > 0 ? '...' : '').($highlighted ?? $snippet);
+    }
+
+    protected function excerptForApi(?string $json, string $query): string
+    {
+        $text = $this->extractor->plainText($json);
+
+        if ($text === '') {
+            return '';
+        }
+
+        $pos = mb_stripos($text, $query);
+
+        if ($pos === false) {
+            return mb_substr($text, 0, 160);
+        }
+
+        $start = max(0, $pos - 50);
+
+        return mb_substr($text, $start, 160);
     }
 }
