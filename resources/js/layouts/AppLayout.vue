@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { SpaceData, TreeNode } from '@/types/wiki'
 import { router, usePage } from '@inertiajs/vue3'
+import { useEventListener } from '@vueuse/core'
 import { computed } from 'vue'
+import CommandPalette from '@/components/search/CommandPalette.vue'
 import PageTree from '@/components/wiki/PageTree.vue'
+import { useCommandPalette } from '@/composables/useCommandPalette'
 
 defineProps<{
   space: SpaceData
@@ -13,6 +16,20 @@ defineProps<{
 const page = usePage()
 const authUser = computed(() => (page.props.auth as { user: { name: string, email: string } | null }).user)
 
+const { open } = useCommandPalette()
+
+// SSR-safe Ctrl+K / Cmd+K binding — @vueuse/core accepts null and no-ops during SSR
+useEventListener(
+  typeof document !== 'undefined' ? document : null,
+  'keydown',
+  (event: KeyboardEvent) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+      event.preventDefault()
+      open()
+    }
+  },
+)
+
 function logout(): void {
   router.post('/logout')
 }
@@ -20,6 +37,9 @@ function logout(): void {
 
 <template>
   <div class="flex min-h-screen bg-[#F7F5FF]">
+    <!-- Command palette (globally mounted, teleports to body) -->
+    <CommandPalette :current-space-slug="space.slug" />
+
     <!-- Sidebar -->
     <aside class="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
       <!-- Space header -->
@@ -33,6 +53,21 @@ function logout(): void {
         <p v-if="space.description" class="mt-0.5 truncate text-xs text-gray-400">
           {{ space.description }}
         </p>
+      </div>
+
+      <!-- Search trigger -->
+      <div class="border-b border-gray-100 px-3 py-2">
+        <button
+          type="button"
+          class="flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-400 hover:border-violet-300 hover:bg-[#EDE7FF] hover:text-violet-700"
+          @click="open"
+        >
+          <svg class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+          </svg>
+          <span class="flex-1 text-left text-xs">Search…</span>
+          <kbd class="rounded border border-gray-200 bg-white px-1 py-0.5 text-xs text-gray-400">⌘K</kbd>
+        </button>
       </div>
 
       <!-- New page button -->
