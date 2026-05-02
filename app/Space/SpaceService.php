@@ -63,7 +63,9 @@ class SpaceService
 
     public function archive(Space $space): void
     {
-        Page::where('space_id', $space->id)->unsearchable();
+        Page::where('space_id', $space->id)
+            ->get()
+            ->each(fn (Page $page) => $page->unsearchable());
 
         $space->delete();
     }

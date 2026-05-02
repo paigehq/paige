@@ -15,6 +15,7 @@ use App\Permission\PermissionChecker;
 use App\Space\Actions\AddSpaceMember;
 use App\Space\Actions\RemoveSpaceMember;
 use App\Space\Actions\UpdateSpaceMemberPermission;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -60,13 +61,14 @@ class SpaceMemberController extends Controller
             });
 
         $groups = $space->userGroups()
-            ->with(['members', 'permissions' => fn ($q) => $q->where('space_id', $space->id)])
+            ->with('members')
+            ->with(['permissions' => fn (Relation $q) => $q->where('space_id', $space->id)])
             ->get()
             ->map(fn (UserGroup $g) => [
                 'id' => $g->id,
                 'name' => $g->name,
                 'action' => $g->permissions->first()?->action->value,
-                'members' => $g->members->map(fn ($m) => ['id' => $m->id, 'name' => $m->name]),
+                'members' => $g->members->map(fn (User $m) => ['id' => $m->id, 'name' => $m->name]),
             ]);
 
         $memberIds = $members->pluck('id');

@@ -14,7 +14,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Collection;
 use Laravel\Scout\Searchable;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
@@ -136,6 +138,9 @@ class Page extends Model
         return $this->belongsToMany(Tag::class, 'page_tag');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toSearchableArray(): array
     {
         return [
@@ -163,7 +168,7 @@ class Page extends Model
      */
     protected function makeAllSearchableUsing(Builder $query): Builder
     {
-        return $query->with(['space' => fn ($q) => $q->withTrashed(), 'tags']);
+        return $query->with(['space', 'tags']);
     }
 
     /**
@@ -173,7 +178,8 @@ class Page extends Model
     public function makeSearchableUsing(Collection $models): Collection
     {
         if ($models instanceof EloquentCollection) {
-            $models->load(['space' => fn ($q) => $q->withTrashed(), 'tags']);
+            $models->load(['space' => fn (Relation $q) => $q->withoutGlobalScope(SoftDeletingScope::class)]);
+            $models->load(['tags']);
         }
 
         return $models;

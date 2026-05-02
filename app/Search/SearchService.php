@@ -8,6 +8,8 @@ use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
 use App\Permission\PermissionChecker;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SearchService
 {
@@ -29,10 +31,11 @@ class SearchService
 
         $pages = Page::search($query)->get();
 
-        $pages->load(['space' => fn ($q) => $q->withTrashed(), 'tags']);
+        $pages->load(['space' => fn (Relation $q) => $q->withoutGlobalScope(SoftDeletingScope::class)]);
+        $pages->load(['tags']);
 
         return $pages
-            ->filter(fn (Page $page) => $page->space !== null && $this->canRead($user, $page->space))
+            ->filter(fn (Page $page) => $this->canRead($user, $page->space))
             ->map(fn (Page $page) => [
                 'title' => $page->title,
                 'excerpt' => $this->excerpt($page->content, $query),
