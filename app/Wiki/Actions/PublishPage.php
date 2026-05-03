@@ -6,11 +6,13 @@ use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\PageSlugHistory;
 use App\Models\Space;
+use App\Models\Tag;
 use App\Models\User;
 use App\Wiki\Exceptions\SlugExhaustedException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class PublishPage
 {
@@ -19,14 +21,20 @@ class PublishPage
         //
     }
 
+    /**
+     * @param  array<int, string>|null  $tagNames
+     *
+     * @throws Throwable
+     */
     public function handle(
         Page $page,
         User $editor,
         ?string $title = null,
         ?string $content = null,
         ?string $changeSummary = null,
+        ?array $tagNames = null,
     ): Page {
-        DB::transaction(function () use ($page, $editor, $title, $content, $changeSummary): void {
+        DB::transaction(function () use ($page, $editor, $title, $content, $changeSummary, $tagNames): void {
             $oldSlug = $page->slug;
 
             $page->title = $title ?? $page->title;
@@ -51,13 +59,27 @@ class PublishPage
             }
 
             $this->createRevision->handle($page, $editor, $changeSummary);
+
+            if ($tagNames !== null) {
+                $tagIds = collect($tagNames)
+                    ->filter()
+                    ->map(fn (string $name): int => Tag::firstOrCreate(
+                        ['slug' => Str::slug($name)],
+                        ['name' => trim($name)],
+                    )->id)
+                    ->all();
+
+                $page->tags()->sync($tagIds);
+            }
         });
 
         // Invalidate cache after commit - outside transaction so a rollback
         // does not cause a spurious cache eviction.
         Cache::forget("page:$page->id:html");
+        $page->refresh();
+        $page->searchable();
 
-        return $page->refresh();
+        return $page;
     }
 
     protected function generateSlug(Space $space, string $title, int $excludePageId): string

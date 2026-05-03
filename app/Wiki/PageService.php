@@ -10,6 +10,7 @@ use App\Wiki\Actions\DeletePage;
 use App\Wiki\Actions\MovePage;
 use App\Wiki\Actions\PublishPage;
 use App\Wiki\Actions\SaveDraft;
+use Throwable;
 
 class PageService
 {
@@ -34,14 +35,20 @@ class PageService
         return $this->createPage->handle($space, $author, $title, $content, $parent, $changeSummary);
     }
 
+    /**
+     * @param  array<int, string>|null  $tagNames
+     *
+     * @throws Throwable
+     */
     public function publishPage(
         Page $page,
         User $editor,
         ?string $title = null,
         ?string $content = null,
         ?string $changeSummary = null,
+        ?array $tagNames = null,
     ): Page {
-        return $this->publishPage->handle($page, $editor, $title, $content, $changeSummary);
+        return $this->publishPage->handle($page, $editor, $title, $content, $changeSummary, $tagNames);
     }
 
     public function movePage(Page $page, ?Page $newParent): Page
@@ -54,8 +61,13 @@ class PageService
         $this->deletePage->handle($page);
     }
 
-    public function saveDraft(Page $page, User $editor, ?string $title, ?string $content): Page
+    /**
+     * @param  array<int, string>|null  $tagNames
+     *
+     * @throws Throwable
+     */
+    public function saveDraft(Page $page, User $editor, ?string $title, ?string $content, ?array $tagNames = null): Page
     {
-        return $this->saveDraft->handle($page, $editor, $title, $content);
+        return $this->saveDraft->handle($page, $editor, $title, $content, $tagNames);
     }
 }
