@@ -3,6 +3,7 @@
 use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
+use App\Wiki\Actions\PublishPage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\URL;
 
@@ -65,5 +66,72 @@ describe('AttachmentController::download with conversion', function () {
         $response = $this->get($url);
 
         $response->assertOk();
+    });
+});
+
+describe('page show — attachment prop', function () {
+    it('returns empty attachments array when page has none', function () {
+        $space = Space::factory()->create(['visibility' => 'public']);
+        $page = Page::factory()->for($space)->create();
+
+        // Publish the page
+        app(PublishPage::class)->handle($page, User::factory()->create());
+
+        $response = $this->get("/s/$space->slug/$page->slug");
+
+        $response->assertInertia(fn ($assert) => $assert
+            ->component('pages/Show')
+            ->where('page.attachments', [])
+        );
+    });
+
+    it('returns attachment data with correct fields', function () {
+        $uploader = User::factory()->create();
+        $space = Space::factory()->create(['visibility' => 'public']);
+        $page = Page::factory()->for($space)->create();
+
+        app(PublishPage::class)->handle($page, $uploader);
+
+        $page->addMediaFromString('content')
+            ->withCustomProperties(['uploader_id' => $uploader->id])
+            ->usingFileName('report.pdf')
+            ->toMediaCollection('attachments');
+
+        $response = $this->actingAs($uploader)->get("/s/$space->slug/$page->slug");
+
+        $response->assertInertia(fn ($assert) => $assert
+            ->component('pages/Show')
+            ->has('page.attachments', 1)
+            ->where('page.attachments.0.filename', 'report.pdf')
+            ->where('page.attachments.0.isImage', false)
+            ->where('page.attachments.0.thumbnailUrl', null)
+            ->has('page.attachments.0.downloadUrl')
+            ->has('page.attachments.0.size')
+            ->has('page.attachments.0.mimeType')
+        );
+    });
+
+    it('sets canDelete=true for uploader and false for other users without admin', function () {
+        $uploader = User::factory()->create();
+        $other = User::factory()->create();
+        $space = Space::factory()->create(['visibility' => 'public']);
+        $page = Page::factory()->for($space)->create();
+
+        app(PublishPage::class)->handle($page, $uploader);
+
+        $page->addMediaFromString('content')
+            ->withCustomProperties(['uploader_id' => $uploader->id])
+            ->usingFileName('file.pdf')
+            ->toMediaCollection('attachments');
+
+        $uploaderResponse = $this->actingAs($uploader)->get("/s/$space->slug/$page->slug");
+        $uploaderResponse->assertInertia(fn ($assert) => $assert
+            ->where('page.attachments.0.canDelete', true)
+        );
+
+        $otherResponse = $this->actingAs($other)->get("/s/$space->slug/$page->slug");
+        $otherResponse->assertInertia(fn ($assert) => $assert
+            ->where('page.attachments.0.canDelete', false)
+        );
     });
 });

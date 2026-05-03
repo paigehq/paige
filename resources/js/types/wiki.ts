@@ -36,6 +36,8 @@ export interface PageViewData {
   children: ChildPageItem[]
   lastEditor: { id: number, name: string } | null
   updatedAt: string
+  attachments: AttachmentItem[]
+  tags: TagItem[]
 }
 
 export interface SpaceShowProps {
@@ -57,6 +59,7 @@ export interface PageEditData {
   content: string | null
   status: 'draft' | 'published'
   revisionNumber: number
+  tags: string[]
 }
 
 export interface RevisionSummary {
@@ -129,4 +132,31 @@ export interface SpaceListItem {
 
 export interface SpaceIndexProps {
   spaces: SpaceListItem[]
+}
+
+export interface AttachmentItem {
+  id: number
+  filename: string
+  size: string
+  mimeType: string
+  isImage: boolean
+  downloadUrl: string
+  thumbnailUrl: string | null
+  canDelete: boolean
+}
+
+export interface TagItem {
+  id: number
+  name: string
+  slug: string
+}
+
+export interface PaginatedData<T> {
+  data: T[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
 }
