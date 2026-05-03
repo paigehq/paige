@@ -77,6 +77,12 @@ class AttachmentController extends Controller
             }
         }
 
+        $conversion = $request->query('conversion');
+
+        if ($conversion && $media->hasGeneratedConversion((string) $conversion)) {
+            return response()->file($media->getPath((string) $conversion));
+        }
+
         return response()->file($media->getPath());
     }
 
