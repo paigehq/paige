@@ -27,5 +27,13 @@ yarn-error.log
 /.zed
 
 /.claude
-/docs
+/docs/decisions
+/docs/superpowers
+/docs/milestone-1.md
+/docs/milestone-2.md
+/docs/milestone-3.md
+/docs/milestone-4.md
+/docs/milestone-5.md
+/docs/README.md
+/docs/session-prompts-milestone-2.md
 CLAUDE.md
