@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import type { PageEditProps } from '@/types/wiki'
-import { router } from '@inertiajs/vue3'
+import { router, useForm } from '@inertiajs/vue3'
 import TiptapEditor from '@/components/editor/TiptapEditor.vue'
+import TagInput from '@/components/wiki/TagInput.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 
 const { space, page, tree } = defineProps<PageEditProps>()
 
 const saveUrl = `/s/${space.slug}/${page.slug}`
 
+const form = useForm({
+  title: page.title,
+  content: page.content ?? '',
+  action: 'draft' as 'draft' | 'publish',
+  change_summary: '',
+  tags: page.tags,
+})
 function onPublished() {
   router.visit(`/s/${space.slug}/${page.slug}`)
 }
@@ -30,6 +38,11 @@ function onPublished() {
         :page-slug="page.slug"
         @published="onPublished"
       />
+
+      <!-- Tag input below editor -->
+      <div class="mt-6">
+        <TagInput v-model="form.tags" />
+      </div>
     </div>
   </AppLayout>
 </template>
