@@ -160,3 +160,29 @@ export interface PaginatedData<T> {
   from: number | null
   to: number | null
 }
+
+export interface TagIndexItem {
+  id: number
+  name: string
+  slug: string
+  pagesCount: number
+}
+
+export interface TagPageItem {
+  id: number
+  title: string
+  slug: string
+  spaceName: string
+  spaceSlug: string
+  lastEditorName: string | null
+  updatedAt: string
+}
+
+export interface TagIndexProps {
+  tags: PaginatedData<TagIndexItem>
+}
+
+export interface TagShowProps {
+  tag: TagItem
+  pages: PaginatedData<TagPageItem>
+}

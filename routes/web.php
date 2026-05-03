@@ -8,6 +8,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Space\SpaceGroupController;
 use App\Http\Controllers\Space\SpaceMemberController;
 use App\Http\Controllers\SpaceController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -96,3 +97,6 @@ Route::prefix('admin')
                 'destroy' => 'spaces.destroy',
             ]);
     });
+
+Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
+Route::get('/tags/{tag:slug}', [TagController::class, 'show'])->name('tags.show');
