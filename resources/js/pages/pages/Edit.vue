@@ -26,6 +26,8 @@ function onPublished() {
         :initial-title="page.title"
         :initial-content="page.content"
         :save-url="saveUrl"
+        :space-slug="space.slug"
+        :page-slug="page.slug"
         @published="onPublished"
       />
     </div>
