@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PageShowProps } from '@/types/wiki'
+import AttachmentList from '@/components/wiki/AttachmentList.vue'
 import AppLayout from '@/layouts/AppLayout.vue'
 
 const { space, page, tree } = defineProps<PageShowProps>()
@@ -39,12 +40,29 @@ const { space, page, tree } = defineProps<PageShowProps>()
         </div>
       </div>
 
-      <p v-if="page.lastEditor" class="mb-8 text-sm text-gray-400">
+      <p v-if="page.lastEditor" class="mb-6 text-sm text-gray-400">
         Last edited by {{ page.lastEditor.name }}
       </p>
 
+      <!-- Tags -->
+      <div v-if="page.tags.length" class="mb-8 flex flex-wrap gap-2">
+        <a
+          v-for="tag in page.tags"
+          :key="tag.id"
+          :href="`/tags/${tag.slug}`"
+          class="rounded-full bg-[#EDE7FF] px-2.5 py-0.5 text-xs font-medium text-violet-800 hover:bg-violet-200"
+        >{{ tag.name }}</a>
+      </div>
+
       <!-- eslint-disable-next-line vue/no-v-html -->
       <div class="prose max-w-none" v-html="page.html" />
+
+      <!-- Attachments -->
+      <AttachmentList
+        :attachments="page.attachments"
+        :space-slug="space.slug"
+        :page-slug="page.slug"
+      />
 
       <section v-if="page.children.length" class="mt-10">
         <h2 class="mb-3 text-lg font-semibold text-gray-700">
