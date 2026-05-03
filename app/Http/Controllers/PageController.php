@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\URL;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Throwable;
 
 class PageController extends Controller
 {
@@ -179,6 +180,8 @@ class PageController extends Controller
 
     public function edit(Space $space, Page $page): Response
     {
+        $page->load('tags');
+
         return Inertia::render('pages/Edit', [
             'space' => [
                 'id' => $space->id,
@@ -193,6 +196,7 @@ class PageController extends Controller
                 'content' => $page->content,
                 'status' => $page->status->value,
                 'revisionNumber' => $page->revision_number,
+                'tags' => $page->tags->pluck('name')->values()->all(),
             ],
             'tree' => $this->treeBuilder->build($space, auth()->check()),
         ]);
@@ -200,6 +204,7 @@ class PageController extends Controller
 
     /**
      * @throws PermissionDeniedException
+     * @throws Throwable
      */
     public function update(UpdatePageRequest $request, Space $space, Page $page): RedirectResponse
     {
@@ -208,6 +213,9 @@ class PageController extends Controller
 
         $this->permissionChecker->authorize($user, 'write', $space);
 
+        /** @var array<int, string> $tags */
+        $tags = $request->input('tags', []);
+
         if ($request->input('action') === 'publish') {
             $this->pageService->publishPage(
                 $page,
@@ -215,6 +223,7 @@ class PageController extends Controller
                 (string) $request->string('title'),
                 (string) $request->string('content') ?: null,
                 (string) $request->string('change_summary') ?: null,
+                $tags,
             );
         } else {
             $this->saveDraft->handle(
@@ -222,6 +231,7 @@ class PageController extends Controller
                 $user,
                 (string) $request->string('title'),
                 (string) $request->string('content') ?: null,
+                $tags,
             );
         }
 

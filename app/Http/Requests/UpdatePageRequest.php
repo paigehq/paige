@@ -27,6 +27,8 @@ class UpdatePageRequest extends FormRequest
             'content' => ['nullable', 'string'],
             'action' => ['required', 'in:draft,publish'],
             'change_summary' => ['nullable', 'string', 'max:500'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['required', 'string', 'max:50'],
         ];
     }
 }
