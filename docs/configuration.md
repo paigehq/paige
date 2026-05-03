@@ -46,6 +46,6 @@ AWS_URL=https://pub-<hash>.r2.dev   # public R2 URL
 
 ## Known limitation: signed URL expiry
 
-Attachment URLs embedded in pages are signed and expire after **60 minutes**. After expiry, <img> tags referencing those URLs will return 403 and render as broken images. This is a deliberate trade-off in Milestone 2 to avoid exposing raw storage paths.
+Attachment URLs embedded in pages are signed and expire after **60 minutes**. After expiry, `<img>` tags referencing those URLs will return 403 and render as broken images. This is a deliberate trade-off in Milestone 2 to avoid exposing raw storage paths.
 
 **Planned fix (future milestone):** Refresh signed URLs on page load, or issue long-lived tokens scoped to the reading user's session.
