@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
 use App\Http\Controllers\SearchController;
@@ -14,6 +15,10 @@ Route::inertia('/', 'Welcome')->name('home');
 Route::get('/spaces', [SpaceController::class, 'index'])->name('spaces.index');
 
 Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+Route::get('/attachments/{media}/download', [AttachmentController::class, 'download'])
+    ->middleware('signed')
+    ->name('attachments.download');
 
 Route::prefix('s')->middleware('space.visibility')->group(function () {
     Route::get('{space:slug}', [SpaceController::class, 'show'])->name('spaces.show');
@@ -36,6 +41,12 @@ Route::prefix('s')->middleware('space.visibility')->group(function () {
             [PageHistoryController::class, 'show'])->name('pages.history.show');
         Route::get('{space:slug}/{page:slug}/history/{a}/diff/{b}',
             [PageHistoryController::class, 'diff'])->name('pages.history.diff');
+        Route::post('{space:slug}/{page:slug}/attachments',
+            [AttachmentController::class, 'store'])
+            ->name('pages.attachments.store');
+        Route::delete('{space:slug}/{page:slug}/attachments/{media}',
+            [AttachmentController::class, 'destroy'])
+            ->name('pages.attachments.destroy');
     });
 
     Route::middleware('auth')->group(function () {
