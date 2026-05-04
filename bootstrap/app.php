@@ -4,6 +4,7 @@ use App\Exceptions\PlanLimitException;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SlugRedirectMiddleware;
 use App\Http\Middleware\SpaceMiddleware;
+use App\Http\Middleware\UpdateLastActive;
 use App\Permission\Exceptions\PermissionDeniedException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             append: [
                 HandleInertiaRequests::class,
                 AddLinkHeadersForPreloadedAssets::class,
+                UpdateLastActive::class,
             ],
             prepend: [SlugRedirectMiddleware::class],
         );
