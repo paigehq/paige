@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\PlanLimitException;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SlugRedirectMiddleware;
 use App\Http\Middleware\SpaceMiddleware;
@@ -39,5 +40,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (PermissionDeniedException $e, Request $request) {
             abort(403);
+        });
+
+        $exceptions->render(function (PlanLimitException $e, Request $request) {
+            return response()->json([
+                'error' => [
+                    'code' => 'plan_limit',
+                    'message' => $e->getMessage(),
+                    'upgrade_url' => '/settings/billing',
+                ],
+            ], 402);
         });
     })->create();
