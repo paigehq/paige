@@ -23,6 +23,7 @@ class Feature
             return false;
         }
 
+        /** @var array<string> $allowedPlans */
         return in_array($user->plan, $allowedPlans, true);
     }
 }

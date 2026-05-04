@@ -37,11 +37,12 @@ class InvitationController extends Controller
             abort(410);
         }
 
-        $user = $this->acceptInvitation->handle(
-            $invitation,
-            $request->validated('name'),
-            $request->validated('password')
-        );
+        /** @var string $name */
+        $name = $request->validated('name');
+        /** @var string $password */
+        $password = $request->validated('password');
+
+        $user = $this->acceptInvitation->handle($invitation, $name, $password);
 
         Auth::login($user);
 

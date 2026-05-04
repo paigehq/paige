@@ -26,6 +26,7 @@ class UserController extends Controller
             ? $request->input('sort')
             : 'name';
         $dir = $request->input('dir', 'asc') === 'desc' ? 'desc' : 'asc';
+        $search = (string) $request->string('search');
 
         $users = User::query()
             ->select('users.*')
@@ -35,24 +36,28 @@ class UserController extends Controller
                     ->where('subject_type', User::class),
             ])
             ->with('roles')
-            ->when($request->input('search'),
-                fn ($q, $search) => $q->where(fn ($q) => $q->where('users.name', 'like', "%{$search}%")
-                    ->orWhere('users.email', 'like', "%{$search}%")
-                )
-            )
+            ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
+                ->where('users.name', 'like', "%{$search}%")
+                ->orWhere('users.email', 'like', "%{$search}%")
+            ))
             ->orderBy($sort, $dir)
             ->paginate(25)
             ->withQueryString()
-            ->through(fn (User $u) => [
-                'id' => $u->id,
-                'name' => $u->name,
-                'email' => $u->email,
-                'plan' => $u->plan,
-                'role' => $u->roles->first()?->name,
-                'space_count' => $u->space_count,
-                'last_active_at' => $u->last_active_at?->toDateTimeString(),
-                'deactivated_at' => $u->deactivated_at?->toDateTimeString(),
-            ]);
+            ->through(function (User $u): array {
+                /** @var int $spaceCount */
+                $spaceCount = $u->getAttribute('space_count');
+
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'plan' => $u->plan,
+                    'role' => $u->getRoleNames()->first(),
+                    'space_count' => $spaceCount,
+                    'last_active_at' => $u->last_active_at?->toDateTimeString(),
+                    'deactivated_at' => $u->deactivated_at?->toDateTimeString(),
+                ];
+            });
 
         return Inertia::render('admin/users/Index', [
             'users' => $users,
@@ -83,10 +88,10 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'plan' => $user->plan,
-                'role' => $user->roles->first()?->name,
+                'role' => $user->getRoleNames()->first(),
                 'last_active_at' => $user->last_active_at?->toDateTimeString(),
                 'deactivated_at' => $user->deactivated_at?->toDateTimeString(),
-                'created_at' => $user->created_at->toDateTimeString(),
+                'created_at' => $user->created_at?->toDateTimeString(),
             ],
             'spaces' => $spaces,
         ]);
