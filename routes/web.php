@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserInvitationController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
@@ -100,6 +101,8 @@ Route::prefix('admin')
 
         Route::get('users', [UserController::class, 'index'])
             ->name('users.index');
+        Route::post('users/invite', [UserInvitationController::class, 'store'])
+            ->name('users.invite');
         Route::get('users/{user}', [UserController::class, 'show'])
             ->name('users.show');
         Route::patch('users/{user}/role', [UserController::class, 'updateRole'])
