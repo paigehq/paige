@@ -6,6 +6,7 @@ use App\Editor\TiptapRenderer;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\Space;
+use App\Space\SpaceService;
 use App\Wiki\PageTreeBuilder;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,7 +16,25 @@ class SpaceController extends Controller
     public function __construct(
         protected readonly TiptapRenderer $renderer,
         protected readonly PageTreeBuilder $treeBuilder,
-    ) {}
+        protected readonly SpaceService $spaceService,
+    ) {
+        //
+    }
+
+    public function index(): Response
+    {
+        $spaces = $this->spaceService->listForUser(auth()->user());
+
+        return Inertia::render('spaces/Index', [
+            'spaces' => $spaces->map(fn (Space $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'slug' => $s->slug,
+                'description' => $s->description,
+                'visibility' => $s->visibility->value,
+            ])->values(),
+        ]);
+    }
 
     public function show(Space $space): Response
     {

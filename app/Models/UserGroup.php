@@ -4,11 +4,17 @@ namespace App\Models;
 
 use Database\Factories\UserGroupFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property Collection<int, Permission> $permissions
+ * @property Collection<int, User> $members
+ */
 #[Fillable(['name', 'slug', 'space_id'])]
 class UserGroup extends Model
 {
@@ -21,6 +27,14 @@ class UserGroup extends Model
     public function space(): BelongsTo
     {
         return $this->belongsTo(Space::class);
+    }
+
+    /**
+     * @return MorphMany<Permission, $this>
+     */
+    public function permissions(): MorphMany
+    {
+        return $this->morphMany(Permission::class, 'subject');
     }
 
     /**

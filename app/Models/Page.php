@@ -2,16 +2,27 @@
 
 namespace App\Models;
 
+use App\Editor\TiptapExtractor;
 use App\Enums\PageStatus;
 use Carbon\CarbonImmutable;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
+use Laravel\Scout\Searchable;
+use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 /**
@@ -43,10 +54,10 @@ use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
     'revision_number',
     'position',
 ])]
-class Page extends Model
+class Page extends Model implements HasMedia
 {
     /** @use HasFactory<PageFactory> */
-    use HasFactory, HasRecursiveRelationships, SoftDeletes;
+    use HasFactory, HasRecursiveRelationships, InteractsWithMedia, Searchable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -116,18 +127,72 @@ class Page extends Model
     }
 
     /**
-     * @return HasMany<Attachment, $this>
-     */
-    public function attachments(): HasMany
-    {
-        return $this->hasMany(Attachment::class);
-    }
-
-    /**
      * @return BelongsToMany<Tag, $this>
      */
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class, 'page_tag');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => app(TiptapExtractor::class)->plainText($this->content),
+            'space_name' => $this->space->name,
+            'space_slug' => $this->space->slug,
+            'space_id' => $this->space_id,
+            'tags' => $this->tags->pluck('name')->implode(', '),
+            'page_url' => route('pages.show', ['space' => $this->space->slug, 'page' => $this->slug]),
+            'status' => $this->status->value,
+            'updated_at' => $this->updated_at->toIso8601String(),
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === PageStatus::Published && $this->deleted_at === null;
+    }
+
+    /**
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
+     */
+    protected function makeAllSearchableUsing(Builder $query): Builder
+    {
+        return $query->with(['space', 'tags']);
+    }
+
+    /**
+     * @param  Collection<int, static>  $models
+     * @return Collection<int, static>
+     */
+    public function makeSearchableUsing(Collection $models): Collection
+    {
+        if ($models instanceof EloquentCollection) {
+            $models->load(['space' => fn (Relation $q) => $q->withoutGlobalScope(SoftDeletingScope::class)]);
+            $models->load(['tags']);
+        }
+
+        return $models;
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('images')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+
+        $this->addMediaCollection('attachments');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumbnail')
+            ->performOnCollections('images')
+            ->fit(Fit::Contain, 300, 300);
     }
 }

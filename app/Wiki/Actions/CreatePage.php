@@ -3,12 +3,14 @@
 namespace App\Wiki\Actions;
 
 use App\Enums\PageStatus;
+use App\Exceptions\PlanLimitException;
 use App\Models\Page;
 use App\Models\Space;
 use App\Models\User;
 use App\Wiki\Exceptions\SlugExhaustedException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class CreatePage
 {
@@ -17,6 +19,9 @@ class CreatePage
         //
     }
 
+    /**
+     * @throws Throwable
+     */
     public function handle(
         Space $space,
         User $author,
@@ -25,6 +30,14 @@ class CreatePage
         ?Page $parent = null,
         ?string $changeSummary = null,
     ): Page {
+        if ($author->plan === 'free') {
+            $pageCount = Page::where('space_id', $space->id)->count();
+
+            if ($pageCount >= 100) {
+                throw new PlanLimitException('pages', $author->plan);
+            }
+        }
+
         return DB::transaction(function () use ($space, $author, $title, $content, $parent, $changeSummary) {
             $page = Page::create([
                 'space_id' => $space->id,

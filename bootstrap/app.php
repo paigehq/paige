@@ -1,15 +1,24 @@
 <?php
 
+use App\Exceptions\PlanLimitException;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SlugRedirectMiddleware;
+use App\Http\Middleware\SpaceMiddleware;
+use App\Http\Middleware\UpdateLastActive;
+use App\Permission\Exceptions\PermissionDeniedException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -18,10 +27,30 @@ return Application::configure(basePath: dirname(__DIR__))
             append: [
                 HandleInertiaRequests::class,
                 AddLinkHeadersForPreloadedAssets::class,
+                UpdateLastActive::class,
             ],
             prepend: [SlugRedirectMiddleware::class],
         );
+
+        $middleware->alias([
+            'space.visibility' => SpaceMiddleware::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (PermissionDeniedException $e, Request $request) {
+            abort(403);
+        });
+
+        $exceptions->render(function (PlanLimitException $e, Request $request) {
+            return response()->json([
+                'error' => [
+                    'code' => 'plan_limit',
+                    'message' => $e->getMessage(),
+                    'upgrade_url' => '/settings/billing',
+                ],
+            ], 402);
+        });
     })->create();

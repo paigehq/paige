@@ -23,7 +23,7 @@ describe('PageController::show', function () {
     });
 
     it('returns 404 for a draft page', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()->for($space)->draft()->create();
 
         $this->get(route('pages.show', [$space, $page]))
@@ -31,7 +31,7 @@ describe('PageController::show', function () {
     });
 
     it('returns 200 with correct props for a published page', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $user = User::factory()->create();
         $page = Page::factory()
             ->for($space)
@@ -59,7 +59,7 @@ describe('PageController::show', function () {
     });
 
     it('breadcrumb is ordered from root to current page', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $user = User::factory()->create();
         $parent = Page::factory()
             ->for($space)
@@ -81,7 +81,7 @@ describe('PageController::show', function () {
     });
 
     it('children list contains only direct published children ordered by position', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $user = User::factory()->create();
         $parent = Page::factory()
             ->for($space)
@@ -113,7 +113,7 @@ describe('PageController::show', function () {
     });
 
     it('tree contains only published pages from this space', function () {
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $otherSpace = Space::factory()->create();
         $user = User::factory()->create();
         $page = Page::factory()
@@ -150,7 +150,7 @@ describe('PageController::show', function () {
 
     it('tree includes draft pages when the user is authenticated', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $published = Page::factory()
             ->for($space)->published()
             ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);
@@ -166,7 +166,7 @@ describe('PageController::show', function () {
 
     it('tree excludes draft pages for unauthenticated visitors', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $published = Page::factory()
             ->for($space)->published()
             ->create(['author_id' => $user->id, 'last_editor_id' => $user->id, 'parent_id' => null]);

@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3'
-import { Extension } from '@tiptap/core'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
 import StarterKit from '@tiptap/starter-kit'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import { useDebounceFn, useEventListener } from '@vueuse/core'
-import { Plugin } from 'prosemirror-state'
+import { Plugin, PluginKey } from 'prosemirror-state'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps<{
   initialTitle: string
   initialContent: string | null
   saveUrl: string
+  spaceSlug: string
+  pageSlug: string
 }>()
 
 const emit = defineEmits<{
@@ -23,29 +24,63 @@ const emit = defineEmits<{
 const title = ref(props.initialTitle)
 const isDirty = ref(false)
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
-const showM2Toast = ref(false)
+const uploadError = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
-const BlockImageDrop = Extension.create({
-  name: 'blockImageDrop',
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        props: {
-          handleDrop(_view, event) {
-            const files = Array.from(event.dataTransfer?.files ?? [])
-            if (files.some(f => f.type.startsWith('image/'))) {
-              event.preventDefault()
-              showM2Toast.value = true
-              setTimeout(() => {
-                showM2Toast.value = false
-              }, 3000)
-              return true
-            }
-            return false
-          },
-        },
-      }),
-    ]
+// Read the XSRF-TOKEN cookie — required for web-route POSTs since Axios was removed in Inertia v3
+function getCsrfToken(): string {
+  return decodeURIComponent(
+    document.cookie
+      .split('; ')
+      .find(row => row.startsWith('XSRF-TOKEN='))
+      ?.split('=')[1] ?? '',
+  )
+}
+
+function showUploadError(): void {
+  uploadError.value = true
+  setTimeout(() => {
+    uploadError.value = false
+  }, 3000)
+}
+
+const imageUploadPluginKey = new PluginKey('imageUpload')
+
+const ImageUploadPlugin = new Plugin({
+  key: imageUploadPluginKey,
+  props: {
+    handleDrop(_view, event) {
+      const files = Array.from(event.dataTransfer?.files ?? [])
+        .filter(f => f.type.startsWith('image/'))
+
+      if (files.length === 0) {
+        return false
+      }
+
+      event.preventDefault()
+
+      const coords = { left: event.clientX, top: event.clientY }
+      const pos = _view.posAtCoords(coords)?.pos ?? _view.state.doc.content.size
+
+      files.forEach(file => uploadFile(file, pos))
+      return true
+    },
+
+    handlePaste(_view, event) {
+      const files = Array.from(event.clipboardData?.files ?? [])
+        .filter(f => f.type.startsWith('image/'))
+
+      if (files.length === 0) {
+        return false
+      }
+
+      event.preventDefault()
+
+      const pos = _view.state.selection.from
+
+      files.forEach(file => uploadFile(file, pos))
+      return true
+    },
   },
 })
 
@@ -58,13 +93,90 @@ const editor = useEditor({
     Underline,
     Link.configure({ openOnClick: false, autolink: true }),
     Image,
-    BlockImageDrop,
   ],
+  editorProps: {
+    handleDrop: ImageUploadPlugin.props.handleDrop,
+    handlePaste: ImageUploadPlugin.props.handlePaste,
+  },
   onUpdate() {
     isDirty.value = true
     debouncedSave()
   },
 })
+
+function uploadFile(file: File, insertPos: number): void {
+  if (!editor.value) {
+    return
+  }
+
+  const view = editor.value.view
+  const objectUrl = URL.createObjectURL(file)
+
+  // Insert a placeholder image node immediately with the blob URL as src
+  const imageNode = view.state.schema.nodes.image.create({ src: objectUrl })
+  const tr = view.state.tr.insert(insertPos, imageNode)
+  view.dispatch(tr)
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  fetch(`/s/${props.spaceSlug}/${props.pageSlug}/attachments`, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-XSRF-TOKEN': getCsrfToken(),
+      'Accept': 'application/json',
+    },
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(`Upload failed: ${res.status}`)
+      }
+      return res.json()
+    })
+    .then((data: { url: string }) => {
+      // Swap the blob URL for the signed URL in-place
+      const { state } = view
+      let nodePos: number | null = null
+
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'image' && node.attrs.src === objectUrl) {
+          nodePos = pos
+          return false
+        }
+      })
+
+      if (nodePos !== null) {
+        const swap = state.tr.setNodeMarkup(nodePos, null, { ...view.state.doc.nodeAt(nodePos)?.attrs, src: data.url })
+        view.dispatch(swap)
+      }
+
+      URL.revokeObjectURL(objectUrl)
+      isDirty.value = true
+    })
+    .catch(() => {
+      // Remove the placeholder node
+      const { state } = view
+      let nodePos: number | null = null
+      let nodeSize = 0
+
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === 'image' && node.attrs.src === objectUrl) {
+          nodePos = pos
+          nodeSize = node.nodeSize
+          return false
+        }
+      })
+
+      if (nodePos !== null) {
+        const remove = state.tr.delete(nodePos, nodePos + nodeSize)
+        view.dispatch(remove)
+      }
+
+      URL.revokeObjectURL(objectUrl)
+      showUploadError()
+    })
+}
 
 function save(action: 'draft' | 'publish') {
   if (!editor.value)
@@ -87,6 +199,25 @@ function save(action: 'draft' | 'publish') {
       saveStatus.value = 'error'
     },
   })
+}
+
+function triggerImagePicker(): void {
+  fileInputRef.value?.click()
+}
+
+function onImageFilePicked(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? []).filter(f => f.type.startsWith('image/'))
+
+  if (!editor.value || files.length === 0) {
+    return
+  }
+
+  const pos = editor.value.view.state.selection.from
+  files.forEach(file => uploadFile(file, pos))
+
+  // Reset input so the same file can be re-selected
+  input.value = ''
 }
 
 let autosaveInterval: ReturnType<typeof setInterval> | undefined
@@ -149,6 +280,16 @@ const toolbarButtons = computed(() => {
 
 <template>
   <div class="flex flex-col">
+    <!-- Hidden file input for the IMG toolbar button -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      multiple
+      @change="onImageFilePicked"
+    >
+
     <!-- Status + action bar -->
     <div class="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-2 text-sm">
       <span>
@@ -192,9 +333,9 @@ const toolbarButtons = computed(() => {
       <div class="mx-1 h-5 w-px bg-gray-200" />
       <button
         type="button"
-        class="cursor-not-allowed rounded px-2 py-1 text-sm text-gray-400"
-        title="Image upload coming in Milestone 2"
-        disabled
+        class="rounded px-2 py-1 text-sm hover:bg-violet-50"
+        title="Insert image"
+        @click="triggerImagePicker"
       >
         IMG
       </button>
@@ -216,7 +357,7 @@ const toolbarButtons = computed(() => {
       class="prose max-w-none flex-1 px-6 py-6 focus:outline-none"
     />
 
-    <!-- Milestone 2 image drop toast -->
+    <!-- Upload error toast -->
     <Transition
       enter-active-class="transition ease-out duration-200"
       enter-from-class="opacity-0 translate-y-2"
@@ -226,10 +367,10 @@ const toolbarButtons = computed(() => {
       leave-to-class="opacity-0 translate-y-2"
     >
       <div
-        v-if="showM2Toast"
-        class="fixed bottom-6 right-6 rounded-lg bg-gray-800 px-4 py-2 text-sm text-white shadow-lg"
+        v-if="uploadError"
+        class="fixed bottom-6 right-6 rounded-lg bg-red-600 px-4 py-2 text-sm text-white shadow-lg"
       >
-        Image upload is coming in Milestone 2
+        Image upload failed. Please try again.
       </div>
     </Transition>
   </div>

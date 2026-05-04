@@ -21,7 +21,7 @@ describe('SlugRedirectMiddleware', function () {
     });
 
     it('passes through when the slug is not in page_slug_history', function () {
-        $space = Space::factory()->create(['slug' => 'my-space']);
+        $space = Space::factory()->public()->create(['slug' => 'my-space']);
         $user = User::factory()->create();
         $page = app(CreatePage::class)->handle($space, $user, 'Installation Guide');
         app(PublishPage::class)->handle($page, $user);

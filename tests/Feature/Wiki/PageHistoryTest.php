@@ -77,7 +77,7 @@ describe('PageHistoryController', function () {
 
     it('renders pages/History with revisions list', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = app(CreatePage::class)->handle($space, $user, 'First', '{"type":"doc","content":[]}');
 
         $this->actingAs($user)
@@ -90,7 +90,7 @@ describe('PageHistoryController', function () {
 
     it('renders pages/RevisionDetail for a single revision', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = app(CreatePage::class)->handle($space, $user, 'First', '{"type":"doc","content":[]}');
 
         $this->actingAs($user)
@@ -102,7 +102,7 @@ describe('PageHistoryController', function () {
 
     it('returns 404 for unknown revision number', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $page = Page::factory()
             ->for($space)->for($user, 'author')->for($user, 'lastEditor')
             ->create();
@@ -114,7 +114,7 @@ describe('PageHistoryController', function () {
 
     it('renders pages/Diff with diff data', function () {
         $user = User::factory()->create();
-        $space = Space::factory()->create();
+        $space = Space::factory()->public()->create();
         $c1 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello world"}]}]}';
         $c2 = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello Paige"}]}]}';
         $page = app(CreatePage::class)->handle($space, $user, 'Test', $c1);

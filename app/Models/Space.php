@@ -3,13 +3,27 @@
 namespace App\Models;
 
 use App\Enums\SpaceVisibility;
+use Carbon\Carbon;
 use Database\Factories\SpaceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property SpaceVisibility $visibility
+ * @property int $owner_id
+ * @property array<string, mixed>|null $settings
+ * @property Carbon|null $deleted_at
+ * @property Carbon $created_at
+ * @property User $owner
+ */
 #[Fillable([
     'name',
     'slug',
@@ -21,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Space extends Model
 {
     /** @use HasFactory<SpaceFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
