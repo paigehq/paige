@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
@@ -96,6 +97,15 @@ Route::prefix('admin')
                 'update' => 'spaces.update',
                 'destroy' => 'spaces.destroy',
             ]);
+
+        Route::get('users', [UserController::class, 'index'])
+            ->name('users.index');
+        Route::get('users/{user}', [UserController::class, 'show'])
+            ->name('users.show');
+        Route::patch('users/{user}/role', [UserController::class, 'updateRole'])
+            ->name('users.role');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])
+            ->name('users.destroy');
     });
 
 Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
