@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserInvitationController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PageHistoryController;
 use App\Http\Controllers\SearchController;
@@ -110,6 +111,11 @@ Route::prefix('admin')
         Route::delete('users/{user}', [UserController::class, 'destroy'])
             ->name('users.destroy');
     });
+
+Route::get('/invitations/{token}/accept', [InvitationController::class, 'show'])
+    ->name('invitations.accept.show');
+Route::post('/invitations/{token}/accept', [InvitationController::class, 'store'])
+    ->name('invitations.accept.store');
 
 Route::get('/tags', [TagController::class, 'index'])->name('tags.index');
 Route::get('/tags/{tag:slug}', [TagController::class, 'show'])->name('tags.show');
