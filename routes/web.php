@@ -104,6 +104,9 @@ Route::prefix('admin')
             ->name('users.index');
         Route::post('users/invite', [UserInvitationController::class, 'store'])
             ->name('users.invite');
+        Route::patch('users/invitations/{invitation}/resend',
+            [UserInvitationController::class, 'resend'])
+            ->name('users.invitations.resend');
         Route::get('users/{user}', [UserController::class, 'show'])
             ->name('users.show');
         Route::patch('users/{user}/role', [UserController::class, 'updateRole'])
